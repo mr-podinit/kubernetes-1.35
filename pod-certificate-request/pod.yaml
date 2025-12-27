@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-certificates-example
+  namespace: default
+  annotations:
+    k8s-135.podinit.sh/pcs-cn: "my-pod.com"
+    k8s-135.podinit.sh/pcs-san: "identity.my-pod.com"
+    k8s-135.podinit.sh/pcs-duration: "1h"
+    k8s-135.podinit.sh/pcs-refresh: "30m"
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: main
+      image: debian
+      command: ["sleep", "infinity"]
+      lifecycle:
+        postStart:
+          exec:
+            command: ["/bin/sh", "-c", "apt update && apt install -y openssl"]
+      volumeMounts:
+        - name: mtls-credentials
+          mountPath: /run/credentials
+  volumes:
+    - name: mtls-credentials
+      projected:
+        sources:
+          - podCertificate:
+              signerName: "k8s-135.podinit.sh/pcs"
+              keyType: ED25519
+              credentialBundlePath: credentialbundle.pem
