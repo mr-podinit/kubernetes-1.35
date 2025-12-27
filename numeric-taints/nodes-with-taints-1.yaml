@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Node
+metadata:
+  name: worker-4gi-1cpu
+spec:
+  taints: 
+  - key: node.kubernetes.io/sla
+    value: "980" # Represents 98.0% SLA
+    effect: NoExecute
+---
+apiVersion: v1
+kind: Node
+metadata:
+  name: worker-7gi-4cpu
+spec:
+  taints:
+  - key: node.kubernetes.io/sla
+    value: "980" # Represents 50.0% SLA
+    effect: NoExecute

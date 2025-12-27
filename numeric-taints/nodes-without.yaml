@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Node
+metadata:
+  name: worker-4gi-1cpu
+spec:
+  taints: []
+---
+apiVersion: v1
+kind: Node
+metadata:
+  name: worker-7gi-4cpu
+spec:
+  taints: []

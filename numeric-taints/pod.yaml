@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tolerate-95-sla
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tolerate-95-sla
+  template:
+    metadata:
+      labels:
+        app: tolerate-95-sla
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+      tolerations:
+      - key: "node.kubernetes.io/sla"
+        operator: "Gt"
+        value: "950"
+        effect: "NoExecute"
+        # tolerationSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - tolerate-95-sla
+              topologyKey: kubernetes.io/hostname
+            weight: 100
