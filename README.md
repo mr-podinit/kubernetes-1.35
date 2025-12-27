@@ -14,12 +14,14 @@ bash start.sh
 
 # Links
 
-* L'annuncio della release
-  <https://kubernetes.io/blog/2025/12/17/kubernetes-v1-35-release/>
+* Release announcement article
 
-* Approfondimenti vari
+  <https://kubernetes.io/blog/2025/12/17/kubernetes-v1-35-release/>
+* See also
   * <https://metalbear.com/blog/kubernetes-1-35/>
   * <https://cloudsmith.com/blog/kubernetes-1-35-what-you-need-to-know>
   * <https://devoriales.com/kubernetes-1-35-timbernetes-release>
   * <https://scaleops.com/blog/kubernetes-1-35-release-overview/>
   * <https://www.reddit.com/r/kubernetes/comments/1pcaw8i/kubernetes_135_changes_around_security_new/>
+
+
