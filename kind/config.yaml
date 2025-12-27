@@ -8,6 +8,9 @@ featureGates:
   "GenericWorkload": true
   "GangScheduling": true
   "ContainerRestartRules": true
+  "KubeletCrashLoopBackOffMax": true
+  "NodeDeclaredFeatures": true
+  "TaintTolerationComparisonOperators": true
 
 runtimeConfig:
   certificates.k8s.io/v1beta1/podcertificaterequests: true
