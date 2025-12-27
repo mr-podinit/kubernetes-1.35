@@ -1,0 +1,39 @@
+# 1. The Workload defines the "Gang" policy
+apiVersion: scheduling.k8s.io/v1alpha1
+kind: Workload
+metadata:
+  name: group-gang-policy
+  namespace: default
+spec:
+  podGroups:
+    - name: workers
+      policy:
+        gang:
+          minCount: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gang-demo-deployment
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gang-demo
+  template:
+    metadata:
+      labels:
+        app: gang-demo
+    spec:
+      workloadRef:
+        name: group-gang-policy
+        podGroup: workers
+      containers:
+        - name: gang-worker
+          image: busybox:1.36
+          command: ["sh", "-c", "echo started; sleep infinity"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
