@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: first-dependency
+spec:
+  selector:
+    app: first-dependency
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: first-dependency
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: first-dependency
+  template:
+    metadata:
+      labels:
+        app: first-dependency
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: first-dependency-nginx-config
+      - name: html
+        configMap:
+          name: first-dependency-html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: first-dependency-nginx-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        location / {
+            return 200 "OK";
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: first-dependency-html
+data:
+  index.html: |
+    OK
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: second-dependency
+spec:
+  selector:
+    app: second-dependency
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-dependency
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-dependency
+  template:
+    metadata:
+      labels:
+        app: second-dependency
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: second-dependency-nginx-config
+      - name: html
+        configMap:
+          name: second-dependency-html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: second-dependency-nginx-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        location / {
+            return 200 "OK";
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: second-dependency-html
+data:
+  index.html: |
+    OK

@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: readiness-updater
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: readiness-updater-role
+rules:
+- apiGroups: [""]
+  resources: ["pods/status"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: readiness-updater-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: readiness-updater-role
+subjects:
+- kind: ServiceAccount
+  name: readiness-updater
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: readiness-gate-demo
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: readiness-gate-demo
+  template:
+    metadata:
+      labels:
+        app: readiness-gate-demo
+    spec:
+      serviceAccountName: readiness-updater
+      terminationGracePeriodSeconds: 1
+      readinessGates:
+      - conditionType: podinit.sh/first-backend-is-ok
+      - conditionType: podinit.sh/second-backend-is-ok
+      containers:
+      - name: readiness-updater
+        image: curlimages/curl
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          #!/bin/bash
+          set -e
+
+          echo "1" > /tmp/readiness-status.txt
+          
+          # Wait for the pod to be scheduled and get its name
+          sleep 5
+          
+          TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+          POD_NAME=$(hostname)
+          PREVIOUS_FIRST_STATUS="Unknown"
+          PREVIOUS_SECOND_STATUS="Unknown"
+
+          while true; do
+            echo "Checking if first-dependency service is reachable..."
+            FINAL_STATUS=0
+            
+            # Check if the first-dependency service is reachable
+            if curl -f --max-time 10 http://first-dependency > /dev/null 2>&1; then
+              FIRST_STATUS="True"
+              echo "Service first-dependency is reachable, setting condition to True"
+            else
+              FIRST_STATUS="False"
+              FINAL_STATUS=1
+              echo "Service first-dependency is not reachable, setting condition to False"
+            fi
+            
+            # Check if the second-dependency service is reachable
+            if curl -f --max-time 10 http://second-dependency > /dev/null 2>&1; then
+              SECOND_STATUS="True"
+              echo "Service second-dependency is reachable, setting condition to True"
+            else
+              SECOND_STATUS="False"
+              FINAL_STATUS=1
+              echo "Service second-dependency is not reachable, setting condition to False"
+            fi
+
+            # Check if either status changed
+            if [ "$FIRST_STATUS" != "$PREVIOUS_FIRST_STATUS" ] || [ "$SECOND_STATUS" != "$PREVIOUS_SECOND_STATUS" ]; then
+              PREVIOUS_FIRST_STATUS="$FIRST_STATUS"
+              PREVIOUS_SECOND_STATUS="$SECOND_STATUS"
+              
+              echo "Updating readiness gates for pod $POD_NAME in namespace $NAMESPACE"
+              echo "first-backend-is-ok=$FIRST_STATUS, second-backend-is-ok=$SECOND_STATUS"
+
+              # Update first condition
+              curl -k -o /dev/null -X PATCH \
+                "https://kubernetes.default.svc/api/v1/namespaces/$NAMESPACE/pods/$POD_NAME/status" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json-patch+json" \
+                -d "[
+                  {\"op\": \"replace\", \"path\": \"/status/conditions\", \"value\": []},
+                  {\"op\": \"add\", \"path\": \"/status/conditions/-\", \"value\": {\"type\": \"podinit.sh/first-backend-is-ok\", \"status\": \"$FIRST_STATUS\"}},
+                  {\"op\": \"add\", \"path\": \"/status/conditions/-\", \"value\": {\"type\": \"podinit.sh/second-backend-is-ok\", \"status\": \"$SECOND_STATUS\"}}
+                ]"
+            fi
+
+            # Save status on Disk
+            echo "$FINAL_STATUS" > /tmp/readiness-status.txt
+            echo "Readiness gate updated successfully"
+            
+            sleep 5
+          done
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - exit $(cat /tmp/readiness-status.txt)
+          initialDelaySeconds: 10
+          periodSeconds: 5
