@@ -5,7 +5,7 @@ This repository is associated to the Youtube Video related to the Kubernetes 1.3
 
 # Start your cluster
 
-In order to start you cluster in Kind you can use the start.sh script in /kind directory
+In order to start you cluster in Kind you can use the start.sh script in /kind directory using a VM with 4vCPU and 8GB of RAM (needed to support the configured reservations)
 
 ```bash
 cd kind
