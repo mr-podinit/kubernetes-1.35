@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: declared-feature
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: declared-feature-demo
+  template:
+    metadata:
+      labels:
+        app: declared-feature-demo
+    spec:
+      terminationGracePeriodSeconds: 1
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - declared-feature-demo
+            topologyKey: kubernetes.io/hostname
+      containers:
+        - name: exit-on-42-and-restart
+          image: busybox:1.36
+          command: ["sh", "-c", "echo Started exit-on-42-and-restart, will die after 15 seconds; sleep 15; exit 42"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          restartPolicy: Never
+          
+          # 1.35 alpha feature, to restart on specific exit codes
+          restartPolicyRules:
+            - action: Restart
+              exitCodes:
+                operator: In
+                values: [42]
+
+        - name: exit-on-5-and-die
+          image: busybox:1.36
+          command: ["sh", "-c", "echo Started exit-on-5-and-die, will die after 15 seconds; sleep 15; exit 5"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          restartPolicy: Never
+
+          # 1.35 alpha feature, to restart on specific exit codes
+          restartPolicyRules:
+            - action: Restart
+              exitCodes:
+                operator: In
+                values: [42]
+
+        - name: healthy-worker
+          image: busybox:1.36
+          command: ["sh", "-c", "echo Started healthy-worker; sleep infinity"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          restartPolicy: Never
+          
+          # 1.35 alpha feature, to restart on specific exit codes
+          restartPolicyRules:
+            - action: RestartAllContainers
+              exitCodes:
+                operator: In
+                values: [42]
