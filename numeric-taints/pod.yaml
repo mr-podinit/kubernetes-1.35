@@ -22,7 +22,6 @@ spec:
         operator: "Gt"
         value: "950"
         effect: "NoExecute"
-        # tolerationSeconds: 10
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

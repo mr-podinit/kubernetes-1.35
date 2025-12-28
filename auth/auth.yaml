@@ -1,0 +1,28 @@
+# /etc/kubernetes/auth-config.yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: AuthenticationConfiguration
+jwt:
+# Production IdP
+- issuer:
+    url: https://okta.example.com
+    audiences:
+    - production-cluster
+  claimMappings:
+    username:
+      expression: 'claims.email.split("@")[0]'
+    groups:
+      expression: 'claims.groups.map(g, "okta:" + g)'
+  claimValidationRules:
+  - expression: 'claims.exp - claims.iat <= 3600'
+    message: "Token lifetime cannot exceed 1 hour"
+
+# CI/CD IdP  
+- issuer:
+    url: https://gitlab.example.com
+    audiences:
+    - ci-cluster
+  claimMappings:
+    username:
+      claim: preferred_username
+    groups:
+      claim: roles
