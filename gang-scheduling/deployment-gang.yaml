@@ -9,7 +9,7 @@ spec:
     - name: workers
       policy:
         gang:
-          minCount: 2
+          minCount: 3
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -26,6 +26,7 @@ spec:
       labels:
         app: gang-demo
     spec:
+      terminationGracePeriodSeconds: 1
       workloadRef:
         name: group-gang-policy
         podGroup: workers
