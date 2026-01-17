@@ -9,15 +9,12 @@ metadata:
     k8s-135.podinit.sh/pcs-duration: "1h"
     k8s-135.podinit.sh/pcs-refresh: "30m"
 spec:
+  terminationGracePeriodSeconds: 1
   automountServiceAccountToken: false
   containers:
     - name: main
-      image: debian
+      image: alpine/openssl:latest
       command: ["sleep", "infinity"]
-      lifecycle:
-        postStart:
-          exec:
-            command: ["/bin/sh", "-c", "apt update && apt install -y openssl"]
       volumeMounts:
         - name: mtls-credentials
           mountPath: /run/credentials

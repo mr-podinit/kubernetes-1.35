@@ -15,5 +15,5 @@ metadata:
 spec:
   taints:
   - key: node.kubernetes.io/sla
-    value: "980" # Represents 50.0% SLA
+    value: "980" # Represents 98.0% SLA
     effect: NoExecute
